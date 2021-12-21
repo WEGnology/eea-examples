@@ -37,13 +37,3 @@ The majority of the code provided in this example applies to nearly any EEA impl
 [Registered Functions](https://docs.app.wnology.io/edge-compute/embedded-edge-agent/agent-api/#registered-function-api) are the primary way your [Embedded Workflows](https://docs.app.wnology.io/workflows/embedded-workflows/) interact with your application code and your device's system resources (e.g. GPIO, I2C, etc.).
 
 This code provides an example registered function, `read_accelerometer`, so you can see how they are implemented and imported into the WASM bundle. It's unlikely that the registered function provided by this example code will apply to your use case. It is expected that you will remove the example registered functions and create your own.
-
----
-
-<!-- ## License
-
-Copyright &copy; 2021 Wegnology IoT, Inc. All rights reserved.
-
-Licensed under the [MIT](https://github.com/WEGnology/eea-examples/blob/master/LICENSE.txt) license.
-
-https://www.losant.com -->
