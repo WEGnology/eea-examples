@@ -46,7 +46,7 @@ module.exports = async ({
       compilerOptions: { traceLevel: 2 }
     };
 
-    client.publish(`losant/${deviceId}/fromAgent/hello`, JSON.stringify(helloMessage), { qos: 0 });
+    client.publish(`wegnology/${deviceId}/fromAgent/hello`, JSON.stringify(helloMessage), { qos: 0 });
   };
 
   const loadNewWasm = async (newWasmContent) => {
@@ -86,8 +86,8 @@ module.exports = async ({
     eeaWrapper?.setConnectionStatus(true);
 
     await client.subscribe([
-      `losant/${deviceId}/toAgent/#`,
-      `losant/${deviceId}/command`,
+      `wegnology/${deviceId}/toAgent/#`,
+      `wegnology/${deviceId}/command`,
       'foo',
       'bar'
     ], { qos: 1 });
@@ -96,7 +96,7 @@ module.exports = async ({
   });
 
   client.on('message', (topic, message) => {
-    if (topic === `losant/${deviceId}/toAgent/flows`) {
+    if (topic === `wegnology/${deviceId}/toAgent/flows`) {
       loadNewWasm(message);
     } else {
       eeaWrapper?.messageReceived(topic, message);
