@@ -23,13 +23,13 @@
     "fs-extra": "^10.0.0"
   },
   "devDependencies": {
-    "@wegnology/eslint-config-losant": "^1.4.3"
+    "@losant/eslint-config-losant": "^1.4.3"
   },
   "browser": {
     "fs-extra": false
   },
   "eslintConfig": {
-    "extends": "@wegnology/eslint-config-wegnology/env/node",
+    "extends": "@losant/eslint-config-wegnology/env/node",
     "globals": {
       "WebAssembly": true
     }
