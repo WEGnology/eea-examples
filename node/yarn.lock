@@ -137,7 +137,7 @@
 
 "@losant/eslint-config-losant@^1.4.3":
   version "1.4.3"
-  resolved "https://registry.yarnpkg.com/@losant/eslint-config-wegnology/-/eslint-config-losant-1.4.3.tgz#7fddb160c33a1d763c6bba720e9892df6f0fad48"
+  resolved "https://registry.yarnpkg.com/@losant/eslint-config-losant/-/eslint-config-losant-1.4.3.tgz#7fddb160c33a1d763c6bba720e9892df6f0fad48"
   integrity sha512-bQSbFnzsQdVvrBq7qY8LZ0EtxSMy7b/OXb229rtwWqPaPWHFMLqcP8CuP2v+rOrbfo6aHB/nIP4XnKgz8BBG7w==
   dependencies:
     babel-eslint "^10.1.0"

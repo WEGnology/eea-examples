@@ -29,7 +29,7 @@
     "fs-extra": false
   },
   "eslintConfig": {
-    "extends": "@losant/eslint-config-wegnology/env/node",
+    "extends": "@losant/eslint-config-losant/env/node",
     "globals": {
       "WebAssembly": true
     }
