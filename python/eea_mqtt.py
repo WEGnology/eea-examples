@@ -25,8 +25,8 @@ def init(device_id, access_key, access_secret, eea_queue, mqtt_queue):
     def on_connect(client, userdata, flags, rc):
 
       if rc == 0:
-        client.subscribe("wegnology/" + device_id + "/command")
-        client.subscribe("wegnology/" + device_id + "/toAgent/#")
+        client.subscribe("losant/" + device_id + "/command")
+        client.subscribe("losant/" + device_id + "/toAgent/#")
 
         nonlocal connected
         connected = True

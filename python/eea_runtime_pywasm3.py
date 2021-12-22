@@ -62,7 +62,7 @@ def init(device_id, eea_queue, mqtt_queue,
     }
 
     mqtt_queue.put({
-      "topic": "wegnology/" + device_id + "/fromAgent/hello",
+      "topic": "losant/" + device_id + "/fromAgent/hello",
       "payload": json.dumps(hello_message)
     })
 
@@ -187,7 +187,7 @@ def init(device_id, eea_queue, mqtt_queue,
           # The MQTT connection status has changed.
           if not wasm_environment == None:
             eea_set_connection_status(message["payload"])
-        elif message.topic == "wegnology/" + device_id + "/toAgent/flows":
+        elif message.topic == "losant/" + device_id + "/toAgent/flows":
           # This message is a new WASM bundle. Make sure to call eea_shutdown
           # before loading a new bundle.
           if not eea_shutdown == None:

@@ -34,7 +34,7 @@ void send_hello_message(const char *bundle_version, QueueHandle_t xQueueMQTT)
   uint32_t topic_length;
   uint32_t payload_length;
 
-  topic_length = sprintf(topic, "wegnology/%s/fromAgent/hello", WNOLOGY_DEVICE_ID);
+  topic_length = sprintf(topic, "losant/%s/fromAgent/hello", WNOLOGY_DEVICE_ID);
   payload_length = sprintf(payload,  
   "{"
     "\"service\": \"embeddedWorkflowAgent\","
