@@ -13,7 +13,7 @@ const buildEEAWrapper = require('./eea-wrapper');
  * @param {string} [options.brokerHost='broker.app.wnology.io'] - The hostname of the broker.
  * @param {string} [options.brokerProtocol='mqtts://'] - The protocol to use to connect to the broker.
  * @param {string} [options.persistedWasmPath] - Path to a file to persist the WASM to.
- * @param {...*} options.eeaWrapperOptions - Other options to pass through to the EEA Wrapper.
+ * @param {*args} options.eeaWrapperOptions - Other options to pass through to the EEA Wrapper.
  *
  * @returns {Object} - Wrapper object with functions to access the MQTT client, the EEA WASM wrapper, and to shut down both.
  *
@@ -46,7 +46,7 @@ module.exports = async ({
       compilerOptions: { traceLevel: 2 }
     };
 
-    client.publish(`losant/${deviceId}/fromAgent/hello`, JSON.stringify(helloMessage), { qos: 0 });
+    client.publish(`wnology/${deviceId}/fromAgent/hello`, JSON.stringify(helloMessage), { qos: 0 });
   };
 
   const loadNewWasm = async (newWasmContent) => {
@@ -86,8 +86,8 @@ module.exports = async ({
     eeaWrapper?.setConnectionStatus(true);
 
     await client.subscribe([
-      `losant/${deviceId}/toAgent/#`,
-      `losant/${deviceId}/command`,
+      `wnology/${deviceId}/toAgent/#`,
+      `wnology/${deviceId}/command`,
       'foo',
       'bar'
     ], { qos: 1 });
@@ -96,7 +96,7 @@ module.exports = async ({
   });
 
   client.on('message', (topic, message) => {
-    if (topic === `losant/${deviceId}/toAgent/flows`) {
+    if (topic === `wnology/${deviceId}/toAgent/flows`) {
       loadNewWasm(message);
     } else {
       eeaWrapper?.messageReceived(topic, message);
