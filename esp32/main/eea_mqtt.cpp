@@ -1,12 +1,8 @@
 /**
  * Makes an MQTT connection to WEGnology's broker and handles queued message data.
  * 
- * For simplicity, this example code is using an unencrypted connection.
- * For SSL, please see ESP's example here:
- * https://github.com/espressif/esp-idf/tree/master/examples/protocols/mqtt/ssl
- * 
  * This code is based on the example code here:
- * https://github.com/espressif/esp-idf/tree/master/examples/protocols/mqtt/tcp
+ * https://github.com/espressif/esp-idf/tree/master/examples/protocols/mqtt/ssl
  */
 
 #include "esp_log.h"
@@ -18,7 +14,7 @@
 #include "eea_config.h"
 #include "eea_queue_msg.h"
 
-#define EEA_MQTT_TASK_SIZE 4096
+#define EEA_MQTT_TASK_SIZE 16384
 #define EEA_MQTT_TASK_PRIORITY 4
 
 // The max payload size from the broker is 256KB.
@@ -27,11 +23,33 @@
 
 static const char *TAG = "EEA_MQTT";
 
+// Load the CA file for the MQTT broker (root_ca.pem).
+// This is used to verify the server certificate.
+extern const uint8_t root_ca_pem_start[]   asm("_binary_root_ca_pem_start");
+extern const uint8_t root_ca_pem_end[]   asm("_binary_root_ca_pem_end");
+
 static void log_error_if_nonzero(const char *message, int error_code)
 {
     if (error_code != 0) {
         ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
     }
+}
+
+/**
+ * Queues a connect or disconnect message.
+ * Queue message with topic "#connect" or "#disconnect" with no payload.
+ * This is picked up by the runtime to change the connected status of the EEA.
+ * Received topics cannot have '#' characters in them, so this will never conflict with real messages.
+ */
+static void queue_connect_message(bool connected, EEA_MQTT *eea_mqtt)
+{
+  const char *topic = connected ? "#connect" : "#disconnect";
+  EEA_Queue_Msg *msg = (EEA_Queue_Msg*)heap_caps_malloc(1 * sizeof(EEA_Queue_Msg), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+  msg->topic_length = strlen(topic);
+  strcpy(msg->topic, topic);
+  msg->payload_length = 0;
+  xQueueSend(eea_mqtt->xQueueEEA, msg, 0);
+  free(msg);
 }
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
@@ -48,20 +66,23 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
       ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
 
       char topic[EEA_TOPIC_SIZE_BYTES];
-      sprintf(topic, "wnology/%s/toAgent/#", WNOLOGY_DEVICE_ID);
+      sprintf(topic, "wnology/%s/toAgent/#", WNOLOGY_DEVICE_ID );
       msg_id = esp_mqtt_client_subscribe(client, topic, 0);
       ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
-      sprintf(topic, "wnology/%s/command", WNOLOGY_DEVICE_ID);
+      sprintf(topic, "wnology/%s/command", WNOLOGY_DEVICE_ID );
       msg_id = esp_mqtt_client_subscribe(client, topic, 0);
       ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
       eea_mqtt->is_connected = true;
 
+      queue_connect_message(true, eea_mqtt);
+
       break;
     case MQTT_EVENT_DISCONNECTED:
       ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
       eea_mqtt->is_connected = false;
+      queue_connect_message(false, eea_mqtt);
       break;
     case MQTT_EVENT_SUBSCRIBED:
       ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
@@ -74,14 +95,21 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
       break;
     case MQTT_EVENT_DATA:
       ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-      ESP_LOGI(TAG, "Topic: %s", event->topic);
+
+      // Topics are not null-terminated from the client.
+      // Null terminate it for logging.
+      char topic_terminated[256];
+      strncpy(topic_terminated, event->topic, event->topic_len);
+      topic_terminated[event->topic_len] = '\0';
+
+      ESP_LOGI(TAG, "Topic: %s", topic_terminated);
       ESP_LOGI(TAG, "Payload length: %d", event->data_len);
 
       // If this is a new WASM bundle, put it in the 
       // flows queue. Otherwise it goes in the regular
       // message queue.
-      if(strstr(event->topic, "flows") != NULL) {
-        // WASM bundles are pretty big (~100kb). Need to allocate this rom SPIRAM.
+      if(strnstr(event->topic, "flows", event->topic_len) != NULL) {
+        // WASM bundles are pretty big (~150kb). Need to allocate this using SPIRAM.
         EEA_Queue_Msg_Flow *msg = (EEA_Queue_Msg_Flow*)heap_caps_malloc(1 * sizeof(EEA_Queue_Msg_Flow), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
         memcpy(msg->bundle, event->data, event->data_len);
         msg->bundle_size = event->data_len;
@@ -89,12 +117,13 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         free(msg);
 
       } else {
-        EEA_Queue_Msg msg;
-        strcpy(msg.topic, event->topic);
-        strcpy(msg.payload, event->data);
-        msg.topic_length = event->topic_len;
-        msg.payload_length = event->data_len;
-        xQueueSend(eea_mqtt->xQueueEEA, &msg, 0);
+        EEA_Queue_Msg *msg = (EEA_Queue_Msg*)heap_caps_malloc(1 * sizeof(EEA_Queue_Msg), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        strncpy(msg->topic, event->topic, event->topic_len);
+        strncpy(msg->payload, event->data, event->data_len);
+        msg->topic_length = event->topic_len;
+        msg->payload_length = event->data_len;
+        xQueueSend(eea_mqtt->xQueueEEA, msg, 0);
+        free(msg);
       }
 
       break;
@@ -121,11 +150,12 @@ void eea_mqtt_task(void *pvParameters)
   esp_mqtt_client_config_t mqtt_cfg = {
     .uri = EEA_BROKER_URL,
     .port = EEA_BROKER_PORT,
-    .client_id = WNOLOGY_DEVICE_ID,
+    .client_id = WNOLOGY_DEVICE_ID ,
     .username = WNOLOGY_ACCESS_KEY,
     .password = WNOLOGY_ACCESS_SECRET,
     .user_context = eea_mqtt,
     .buffer_size = EEA_MQTT_IN_BUFFER_SIZE,
+    .cert_pem = (const char *)root_ca_pem_start,
     .out_buffer_size = EEA_MQTT_OUT_BUFFER_SIZE
   };
 
@@ -139,13 +169,14 @@ void eea_mqtt_task(void *pvParameters)
   while(true) {
     if(eea_mqtt->is_connected) {
       if(uxQueueMessagesWaiting(eea_mqtt->xQueueMQTT) > 0) {
-        EEA_Queue_Msg msg;
-        if(xQueueReceive(eea_mqtt->xQueueMQTT, &msg, 0) == pdPASS) {
+        EEA_Queue_Msg *msg = (EEA_Queue_Msg*)heap_caps_malloc(1 * sizeof(EEA_Queue_Msg), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        if(xQueueReceive(eea_mqtt->xQueueMQTT, msg, 0) == pdPASS) {
           ESP_LOGI(TAG, "Processing MQTT queue message.");
-          ESP_LOGI(TAG, "Topic: %s", msg.topic);
-          ESP_LOGI(TAG, "Payload: %s", msg.payload);
-          esp_mqtt_client_publish(client, msg.topic, msg.payload, msg.payload_length, msg.qos, 0);
+          ESP_LOGI(TAG, "Topic: %s", msg->topic);
+          ESP_LOGI(TAG, "Payload: %s", msg->payload);
+          esp_mqtt_client_publish(client, msg->topic, msg->payload, msg->payload_length, msg->qos, 0);
         }
+        free(msg);
       }
     }
     vTaskDelay(xDelay);

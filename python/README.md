@@ -1,6 +1,6 @@
 # EEA Example Application: Python
 
-This folder contains an example Python application for the [Wegnology Embedded Edge Agent](https://docs.app.wnology.io/edge-compute/embedded-edge-agent/overview/) (EEA). The EEA works by compiling workflows to a [WebAssembly](https://webassembly.org/) module and publishing that module to your application over MQTT. Therefore, the majority of this code demonstrates how to load and interact with a WebAssembly (WASM) module using the imports and exports as defined in the [EEA API](http://docs.app.wnology.io/edge-compute/embedded-edge-agent/agent-api/).
+This folder contains an example Python application for the [Wegnology Embedded Edge Agent](https://docs.app.wnology.io/edge-compute/embedded-edge-agent/overview/) (EEA). The EEA works by compiling workflows to a [WebAssembly](https://webassembly.org/) module and publishing that module to your application over MQTT. Therefore, the majority of this code demonstrates how to load and interact with a WebAssembly (WASM) module using the imports and exports as defined in the [EEA API](https://docs.app.wnology.io//edge-compute/embedded-edge-agent/agent-api/).
 
 This example is meant to be used as a starting point and reference implementation for your own Python edge applications. It is not intended to function as an out-of-the-box EEA implementation. Significant modifications will be required when implementing a production Python edge application that utilizes the EEA.
 
