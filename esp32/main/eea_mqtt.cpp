@@ -48,11 +48,11 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
       ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
 
       char topic[EEA_TOPIC_SIZE_BYTES];
-      sprintf(topic, "losant/%s/toAgent/#", WNOLOGY_DEVICE_ID);
+      sprintf(topic, "wnology/%s/toAgent/#", WNOLOGY_DEVICE_ID);
       msg_id = esp_mqtt_client_subscribe(client, topic, 0);
       ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
-      sprintf(topic, "losant/%s/command", WNOLOGY_DEVICE_ID);
+      sprintf(topic, "wnology/%s/command", WNOLOGY_DEVICE_ID);
       msg_id = esp_mqtt_client_subscribe(client, topic, 0);
       ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
